@@ -21,8 +21,8 @@ jobs:
         id: git-cliff-json
         run: |
           git cliff --context --output context.json
-          jq --compact-output --from-file jq/prune-changelog.jq context.json > context.json
-          echo "context=$(cat context.json)" >> "$GITHUB_OUTPUT"
+          jq --compact-output --from-file jq/prune-changelog.jq context.json > prune-context.json
+          echo "context=$(cat prune-context.json)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
