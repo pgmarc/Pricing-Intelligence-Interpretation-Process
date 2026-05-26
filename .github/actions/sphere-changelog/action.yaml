@@ -1,0 +1,59 @@
+name: Smart changelog generator for SPHERE
+description: Generate a changelog and upload it to SPHERE repository
+inputs:
+  filename:
+    description: Filename of the generated changelog
+    required: true
+    default: changelog.json
+  sphere_upload_path:
+    description: Path of SPHERE repository where the changelog is stored
+    required: true
+    default: frontend/src/modules/presentation/pages/changelog/data
+  sphere_repository:
+    description: SPHERE Github repository path
+    required: true
+    default: Alex-GF/SPHERE
+  sphere_token:
+    description: "PAT token with `Contends` read and write permissions to SPHERE"
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+        with:
+          fetch-depth: 0
+
+    - name: Install git-cliff
+      uses: taiki-e/install-action@git-cliff
+
+    - name: Generate a CHANGELOG (JSON)
+      id: git-cliff-json
+      env:
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+      run: |
+          git cliff --context --output context.json
+          jq --compact-output --from-file "$GITHUB_ACTION_PATH/prune-changelog.jq" context.json > prune-context.json
+          echo "context=$(cat prune-context.json)" >> "$GITHUB_OUTPUT"
+
+    - name: Checkout repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+      with:
+        repository: ${{ inputs.sphere_repository }}
+        token: ${{ inputs.sphere_token }}
+
+    - name: Upload CHANGELOG (JSON) to SPHERE repository
+      run: |
+        cd "$SPHERE_UPLOAD_PATH"
+        cat <<EOF > "$FILENAME"
+        ${{ steps.git-cliff-json.outputs.context }}
+        EOF
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "$FILENAME"
+        git commit -m "chore: update $GITHUB_REPOSITORY changelog"
+        git push
+      env:
+        SPHERE_UPLOAD_PATH: ${{ inputs.sphere_upload_path }}
+        FILENAME: ${{ inputs.filename }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
