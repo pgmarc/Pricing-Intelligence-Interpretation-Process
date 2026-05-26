@@ -29,12 +29,13 @@ runs:
 
     - name: Generate a CHANGELOG (JSON)
       id: git-cliff-json
-      env:
-        GITHUB_ACTION_PATH: ${{ github.action_path }}
       run: |
           git cliff --context --output context.json
           jq --compact-output --from-file "$GITHUB_ACTION_PATH/prune-changelog.jq" context.json > prune-context.json
           echo "context=$(cat prune-context.json)" >> "$GITHUB_OUTPUT"
+      shell: bash
+      env:
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
 
     - name: Checkout repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
@@ -53,6 +54,7 @@ runs:
         git add "$FILENAME"
         git commit -m "chore: update $GITHUB_REPOSITORY changelog"
         git push
+      shell: bash
       env:
         SPHERE_UPLOAD_PATH: ${{ inputs.sphere_upload_path }}
         FILENAME: ${{ inputs.filename }}
