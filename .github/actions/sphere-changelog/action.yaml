@@ -37,9 +37,11 @@ runs:
       with:
         repository: ${{ inputs.sphere_repository }}
         token: ${{ inputs.sphere_token }}
+        path: sphere
 
     - name: Upload CHANGELOG (JSON) to SPHERE repository
       run: |
+        cd "$GITHUB_WORKSPACE/sphere"
         cd "$SPHERE_UPLOAD_PATH"
         cat <<EOF > "$FILENAME"
         ${{ steps.git-cliff-json.outputs.context }}
