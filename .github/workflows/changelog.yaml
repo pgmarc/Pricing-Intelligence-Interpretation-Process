@@ -2,7 +2,7 @@ name: Generate changelog
 on:
   push:
     tags:
-      - *
+      - '*'
 
 permissions:
   contents: write
