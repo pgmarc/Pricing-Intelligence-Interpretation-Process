@@ -1,20 +1,12 @@
 name: Smart changelog generator for SPHERE
 description: Generate a changelog and upload it to SPHERE repository
 inputs:
-  filename:
-    description: Filename of the generated changelog
+  commit_threshold:
+    description: Summarize all commit message  after surpassing this limit
     required: true
-    default: changelog.json
-  sphere_upload_path:
-    description: Path of SPHERE repository where the changelog is stored
-    required: true
-    default: frontend/src/modules/presentation/pages/changelog/data
-  sphere_repository:
-    description: SPHERE Github repository path
-    required: true
-    default: Alex-GF/SPHERE
-  sphere_token:
-    description: "PAT token with `Contends` read and write permissions to SPHERE"
+    default: 10
+  gemini_api_key:
+    description: Gemini API key to use when summarizing commits
     required: true
 runs:
   using: composite
@@ -25,34 +17,35 @@ runs:
     - name: Generate a CHANGELOG (JSON)
       id: git-cliff-json
       run: |
-          git cliff --context --output context.json
-          jq --compact-output --from-file "$GITHUB_ACTION_PATH/prune-changelog.jq" context.json > prune-context.json
+          git cliff --latest --context --output context.json
+          jq --compact-output --from-file "$GITHUB_ACTION_PATH/00-prune-changelog.jq" context.json > prune-context.json
           echo "context=$(cat prune-context.json)" >> "$GITHUB_OUTPUT"
+          echo "n_commits=$(jq '.commits | length' prune-context.json)"
+          echo "latest_tag=$(jq '.version' prune-context.json)"
       shell: bash
-      env:
-        GITHUB_ACTION_PATH: ${{ github.action_path }}
 
-    - name: Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+    - name: Install Python
+      if: steps.git-cliff-json.outputs.n_commits > inputs.commit_threshold
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 #v6.2.0
       with:
-        repository: ${{ inputs.sphere_repository }}
-        token: ${{ inputs.sphere_token }}
-        path: sphere
+        python-version: '3.13'
 
-    - name: Upload CHANGELOG (JSON) to SPHERE repository
-      run: |
-        cd "$GITHUB_WORKSPACE/sphere"
-        cd "$SPHERE_UPLOAD_PATH"
-        cat <<EOF > "$FILENAME"
-        ${{ steps.git-cliff-json.outputs.context }}
-        EOF
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add "$FILENAME"
-        git commit -m "chore: update $GITHUB_REPOSITORY changelog"
-        git push
+    - name: Install dependencies
+      if: steps.git-cliff-json.outputs.n_commits > inputs.commit_threshold
+      run: pip install -r requirements.txt
+      shell: bash
+
+    - name: Summarize commits if threshold is surpassed
+      if: steps.git-cliff-json.outputs.n_commits > inputs.commit_threshold
+      run: python "$ǴITHUB_ACTION_PATH/summarize.py"
       shell: bash
       env:
-        SPHERE_UPLOAD_PATH: ${{ inputs.sphere_upload_path }}
-        FILENAME: ${{ inputs.filename }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
+        GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
+    - name: Create release github
+      run: |
+        jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" prune-context.json > changelog.json
+        git cliff --latest --output CHANGELOG.md
+        gh create release "$LATEST" --verify-tag --draft --fail-on-no-commits --notes-file CHANGELOG.md "changelog.json#Changelog (JSON)"
+      shell: bash
+      env:
+        LATEST: ${{ steps.git-cliff-json.outputs.latest_tag }}

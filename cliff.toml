@@ -58,24 +58,6 @@ protect_breaking_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
-    { message = "^feat\\(harvey\\)", group = "features_harvey" },
-    { message = "^fix\\(harvey\\)", group = "fixes_harvey" },
-
-    { message = "^feat\\(prime\\)", group = "features_analysis_api" },
-    { message = "^fix\\(prime\\)", group = "fixes_analysis_api" },
-
-    { message = "^feat\\(mcp\\)", group = "features_mcp" },
-    { message = "^fix\\(mcp\\)", group = "fixes_mcp" },
-
-    { message = "^feat\\(csp\\)", group = "features_csp" },
-    { message = "^fix\\(csp\\)", group = "fixes_csp" },
-
-    { message = "^feat\\(amint\\)", group = "features_amint" },
-    { message = "^feat\\(amint\\)", group = "fixes_amint" },
-
-    { message = "^feat\\(ui\\)", group = "features_ui" },
-    { message = "^fix\\(ui\\)", group = "fixes_ui" },
-
     { message = "^feat", group = "features" },
     { message = "^fix", group = "fixes" },
     { message = "^docs", group = "docs" },

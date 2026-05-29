@@ -1,7 +1,12 @@
 name: Generate changelog
 on:
-  release:
-    types: ["published"]
+  push:
+    tags:
+      - *
+
+permissions:
+  contents: write
+
 jobs:
   changelog:
     name: Generate changelog
@@ -14,6 +19,4 @@ jobs:
       - name: Generate changelog
         uses: ./.github/actions/sphere-changelog
         with:
-          filename: pricing-intelligence.json
-          sphere_repository: pgmarc/SPHERE
-          sphere_token: ${{ secrets.SPHERE_PAT_TOKEN }}
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
