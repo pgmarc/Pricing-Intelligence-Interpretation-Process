@@ -45,7 +45,7 @@ runs:
       run: |
         jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" prune-context.json > changelog.json
         git cliff --latest --output CHANGELOG.md
-        gh create release "$LATEST" --verify-tag --draft --fail-on-no-commits --notes-file CHANGELOG.md "changelog.json#Changelog (JSON)"
+        gh release create "$LATEST" --verify-tag --draft --fail-on-no-commits --notes-file CHANGELOG.md "changelog.json#Changelog (JSON)"
       shell: bash
       env:
         LATEST: ${{ steps.git-cliff-json.outputs.latest_tag }}
