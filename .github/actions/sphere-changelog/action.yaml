@@ -20,8 +20,8 @@ runs:
           git cliff --latest --context --output context.json
           jq --compact-output --from-file "$GITHUB_ACTION_PATH/00-prune-changelog.jq" context.json > prune-context.json
           echo "context=$(cat prune-context.json)" >> "$GITHUB_OUTPUT"
-          echo "n_commits=$(jq '.commits | length' prune-context.json)"
-          echo "latest_tag=$(jq '.version' prune-context.json)"
+          echo "n_commits=$(jq '.commits | length' prune-context.json)" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=$(jq '.version' prune-context.json)" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Install Python
