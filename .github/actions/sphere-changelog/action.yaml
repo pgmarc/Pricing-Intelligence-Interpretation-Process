@@ -48,4 +48,5 @@ runs:
         gh release create "$LATEST" --verify-tag --draft --fail-on-no-commits --notes-file CHANGELOG.md "changelog.json#Changelog (JSON)"
       shell: bash
       env:
+        GH_TOKEN: ${{ github.token }}
         LATEST: ${{ steps.git-cliff-json.outputs.latest_tag }}
