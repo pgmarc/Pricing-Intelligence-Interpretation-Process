@@ -1,5 +1,4 @@
 from enum import Enum
-import json
 import sys
 from typing import Annotated, List, Optional
 from uuid import UUID, uuid4
@@ -98,4 +97,4 @@ if __name__ == "__main__":
                 ),
         )
 	summarized_changes = adapter.validate_json(response.text)
-	print(json.dumps(summarized_changes))
+	print(adapter.dump_json(summarized_changes))
