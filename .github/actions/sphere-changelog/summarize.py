@@ -44,7 +44,8 @@ class Change(BaseModel):
     """
     id: UUID = Field(description="Computed uuid4 of a summarized change by LLM.")
     message: str = Field(description="Description of the change summarized by LLM.")
-
+    group: Group = Field(description="Type of the commit".)
+    scope: Annotated[Scope, Field(description="Scope of the summarized commit.")] = None
 
 adapter = TypeAdapter(List[Change])
 
