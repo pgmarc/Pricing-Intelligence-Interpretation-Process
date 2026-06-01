@@ -1,3 +1,4 @@
 feat(harvey): use HARVEY with a local LLM
 fix(harvey): add missing import in 
 fix(harvey): add required import in app.py
+feat(harvey): reduce amount of tokens consumed by HARVEY
