@@ -9,3 +9,4 @@ feat(csp): improve performance of CSP api by changing config variable
 feat(csp): remove unnecessary imports
 feat(csp): remove unnecesary imports
 feat(ui): add E2E tests to HARVEY chatbot
+feat(harvey): use HARVEY with a local LLM
