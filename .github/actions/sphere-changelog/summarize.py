@@ -5,6 +5,7 @@ from typing import Annotated, List, Optional
 from uuid import UUID, uuid4
 
 from google import genai
+from google.genai import types
 from pydantic import BaseModel, Field, TypeAdapter
 
 
@@ -91,9 +92,10 @@ if __name__ == "__main__":
 	response = client.models.generate_content(
     		model="gemini-2.5-flash-lite",
     		contents=get_prompt(input_data),
-    		config={
-        		"response_format": {"text": {"mime_type": "application/json", "schema": adapter.json_schema()}},
-    		},
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_json_schema=adapter.json_schema(),
+                ),
         )
 	summarized_changes = adapter.model_validate_json(response.text)
 	print(json.dumps(summarized_changes))
