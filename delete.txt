@@ -15,3 +15,4 @@ fix(harvey): add required import in app.py
 feat(harvey): reduce amount of tokens consumed by HARVEY
 feat(ui): improve chatbot UX by redistributing UI components
 docs(harvey): add instructions to deploy HARVEY on any machine
+feat(csp): improve speed of CSP api by a factor of 10
