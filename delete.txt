@@ -5,3 +5,4 @@ feat(harvey): reduce amount of tokens consumed by HARVEY
 feat(ui): improve chatbot UX by redistributing UI components
 docs(harvey): add instructions to deploy HARVEY on any machine
 feat(csp): improve speed of CSP api by a factor of 10
+feat(csp): improve performance of CSP api by changing config variable
