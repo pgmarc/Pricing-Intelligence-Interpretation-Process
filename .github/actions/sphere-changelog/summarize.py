@@ -97,5 +97,5 @@ if __name__ == "__main__":
                     response_json_schema=adapter.json_schema(),
                 ),
         )
-	summarized_changes = adapter.model_validate_json(response.text)
+	summarized_changes = adapter.validate_json(response.text)
 	print(json.dumps(summarized_changes))
