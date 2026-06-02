@@ -56,23 +56,32 @@ SYSTEM_INSTRUCTION=("You are a technical writer creating a public changelog. "
 
 def get_prompt(json_input: str):
 	return f"""
-	Task: Given a JSON input summarize and/or merge commits messages in the following jq path `.commits` and
-	clasify them as a `feat` or `fix`. Your goal is to generate as few entries as possible in order to get an overview of
-	the features and fixes that were made during one software release to another.
+	## Task Goal
+        Generate the fewest number of entries possible to give a clear overview of the features and fixes introduced between releases.
 
-	Rules:
-	- If you merge or summarize two or more commits together create an UUID
-	- If two descriptions are identical merge them into one. For example, `fix deployment` and `deployment is now working`
-	- Commits types of type `feat` and `fix` must not be merged. For example `feat: iPricing actions on same column` and `fix: add-on names not printing in solutions`
-	- You must not merge commits of different scope. For example, if scope is `feat(harvey)` and `feat(mcp)` do not merge them together.
-	- You must not generate more messages than they were passed in the JSON input
+	## Processing Rules
 
-	The input has the following JSON schema:
+        ### Classification & Merging
+
+        1. Extraction: Read the commit messages located at the .commits JQ path.
+        2. Classification: Classify every resulting entry strictly as either a `feat` or a `fix`.
+        3. Semantic Merging: Merge/summarize two or more commits if they are semantically identical or redundant
+        (e.g. "fix deployment" and "deployment is now working" should be merged into one entry).
+        4. ID Generation: If an entry represents a single, unmerged commit, retain its original ID/commit hash.
+          - If you merge or summarize two or more commits together, generate a unique UUID v4 for that new entry.
+
+        ### Restrictions
+
+        - Never merge a feat and a fix together.
+	- Never merge commits with different scopes (e.g. `feat(harvey)` and `feat(mcp)` must remain separate).
+        - Never generate more output entries that the total number of commits provided in the input.
+
+	## Input JSON Schema
 	```json
 	{json.dumps(Release.model_json_schema())}
 	```
 
-	Here is the JSON input:
+	## JSON Input
 	```json
 	{json_input}
 	```
@@ -102,4 +111,4 @@ if __name__ == "__main__":
                 ),
         )
 	summarized_changes = adapter.validate_json(response.text)
-	print(adapter.dump_json(summarized_changes))
+	print(adapter.dump_json(summarized_changes).decode('utf-8'))
