@@ -8,8 +8,8 @@
 		| group_by(.scope)
 		| map({
 			name: .[0].scope,
-			features: map(select(.raw_message | startswith("feat")) | { id, message }),
-			fixes: map(select(.raw_message | startswith("fix")) | { id, message })
+			features: map(select(.group == "features") | { id, message }),
+			fixes: map(select(.group == "fixes") | { id, message })
 		      })
 	)
 }
