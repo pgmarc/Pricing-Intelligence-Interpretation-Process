@@ -25,3 +25,4 @@ fix(harvey): add missing import in
 fix(harvey): add required import in app.py
 feat(harvey): reduce amount of tokens consumed by HARVEY
 feat(ui): improve chatbot UX by redistributing UI components
+docs(harvey): add instructions to deploy HARVEY on any machine
