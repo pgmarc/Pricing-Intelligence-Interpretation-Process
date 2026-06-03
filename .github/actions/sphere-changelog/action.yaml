@@ -83,12 +83,12 @@ runs:
         CHANGELOG=$(mktemp)
         GIT_CLIFF_OUTPUT="$CHANGELOG" git cliff --latest
         LATEST_TAG=$(jq -r '.version' "$PRUNE_CONTEXT")
-        printf "Creating a release (draft) for tag `%s`\n\n" "$LATEST_TAG" >> "$GITHUB_STEP_SUMMARY"
+        gh release create "$LATEST_TAG" --verify-tag --draft --fail-on-no-commits --notes-file "$CHANGELOG" "changelog.json#Changelog (JSON)"
+        echo "Created a release (draft) for tag \`$LATEST_TAG\`" >> "$GITHUB_STEP_SUMMARY"
         echo "Generated changelog was:" >> "$GITHUB_STEP_SUMMARY"
         echo "\`\`\`json" >> "$GITHUB_STEP_SUMMARY"
         jq '.' changelog.json >> "$GITHUB_STEP_SUMMARY"
         echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
-        gh release create "$LATEST_TAG" --verify-tag --draft --fail-on-no-commits --notes-file "$CHANGELOG" "changelog.json#Changelog (JSON)"
       shell: bash
       env:
         TMPDIR: ${{ runner.temp }}
