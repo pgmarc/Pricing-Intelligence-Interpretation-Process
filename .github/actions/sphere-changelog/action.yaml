@@ -25,12 +25,15 @@ runs:
     - name: Generate a CHANGELOG (JSON)
       id: git-cliff-json
       run: |
-          git cliff --latest --context --output context.json
-          jq --compact-output --from-file "$GITHUB_ACTION_PATH/00-prune-changelog.jq" context.json > prune-context.json
-          echo "context=$(cat prune-context.json)" >> "$GITHUB_OUTPUT"
-          echo "NUMBER_OF_COMMITS=$(jq -r '.commits | length' prune-context.json)" >> "$GITHUB_ENV"
-          echo "LATEST_TAG=$(jq -r '.version' prune-context.json)" >> "$GITHUB_ENV"
+          CONTEXT=$(mktemp)
+          GIT_CLIFF_OUTPUT="$CONTEXT" git cliff --latest --context
+          PRUNE_CONTEXT=$(mktemp)
+          jq --compact-output --from-file "$GITHUB_ACTION_PATH/00-prune-changelog.jq" "$CONTEXT" > "$PRUNE_CONTEXT"
+          echo "PRUNE_CONTEXT=$PRUNE_CONTEXT" >> "$GITHUB_ENV"
+          echo "NUMBER_OF_COMMITS=$(jq -r '.commits | length' "$PRUNE_CONTEXT")" >> "$GITHUB_ENV"
       shell: bash
+      env:
+        TMPDIR: ${{ runner.temp }}
 
     - name: Install Python
       if: env.NUMBER_OF_COMMITS > inputs.commit_threshold
@@ -50,30 +53,41 @@ runs:
       id: summarize
       if: env.NUMBER_OF_COMMITS > inputs.commit_threshold
       run: |
-          echo "::debug::Summarizing $NUMBER_OF_COMMITS commits"
-          echo "commits=$(python $GITHUB_ACTION_PATH/summarize.py < prune-context.json)" >> "$GITHUB_OUTPUT"
+          SUMMARIZED_COMMITS=$(mktemp)
+          python "$GITHUB_ACTION_PATH/summarize.py" < "$PRUNE_CONTEXT" > "$SUMMARIZED_COMMITS"
+          NUMBER_OF_SUMMARIZED_COMMITS=$(jq -r 'length' "$SUMMARIZED_COMMITS")
+          echo "commits=$SUMMARIZED_COMMITS" >> "$GITHUB_OUTPUT"
+          echo "Summarizing **$NUMBER_OF_COMMITS commits** into **$NUMBER_OF_SUMMARIZED_COMMITS**" >> "$GITHUB_STEP_SUMMARY"
+          echo "```json" >> "$GITHUB_STEP_SUMMARY"
+          jq '.' "$SUMMARIZED_COMMITS" >> "$GITHUB_STEP_SUMMARY"
+          echo "```" >> "$GITHUB_STEP_SUMMARY"
       shell: bash
       env:
+        TMPDIR: ${{ runner.temp }}
         GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
         GEMINI_MODEL_ID: ${{ inputs.gemini_model_id }}
     - name: Create Github Release
       run: |
         case $SUMMARIZE_STATUS in
             success)
-                jq --argjson sections "$SUMMARIZE_COMMITS" '.commits |= $sections' prune-context.json | \
+                jq --argjson sections "$(jq -c '.' "$SUMMARIZE_COMMITS")" '.commits |= $sections' "$PRUNE_CONTEXT" | \
                   jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" > changelog.json
                 ;;
             skipped)
-                jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" prune-context.json > changelog.json
+                jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" "$PRUNE_CONTEXT" > changelog.json
                 ;;
             *)
                 echo "::debug::Summarize status $SUMMARIZE_STATUS not handled"
                 ;;
         esac
-        git cliff --latest --output CHANGELOG.md
-        gh release create "$LATEST_TAG" --verify-tag --draft --fail-on-no-commits --notes-file CHANGELOG.md "changelog.json#Changelog (JSON)"
+        CHANGELOG=$(mktemp)
+        GIT_CLIFF_OUTPUT="$CHANGELOG" git cliff --latest
+        LATEST_TAG=$(jq -r '.version' "$PRUNE_CONTEXT")
+        echo "Creating a release (draft) for tag `$LATEST_TAG`" >> "$GITHUB_STEP_SUMMARY"
+        gh release create "$LATEST_TAG" --verify-tag --draft --fail-on-no-commits --notes-file "$CHANGELOG" "changelog.json#Changelog (JSON)"
       shell: bash
       env:
+        TMPDIR: ${{ runner.temp }}
         GH_TOKEN: ${{ github.token }}
         SUMMARIZE_STATUS: ${{ steps.summarize.outcome }}
         SUMMARIZE_COMMITS: ${{ steps.summarize.outputs.commits }}
