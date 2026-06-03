@@ -31,6 +31,8 @@ runs:
           jq --compact-output --from-file "$GITHUB_ACTION_PATH/00-prune-changelog.jq" "$CONTEXT" > "$PRUNE_CONTEXT"
           echo "PRUNE_CONTEXT=$PRUNE_CONTEXT" >> "$GITHUB_ENV"
           echo "NUMBER_OF_COMMITS=$(jq -r '.commits | length' "$PRUNE_CONTEXT")" >> "$GITHUB_ENV"
+          echo "Cleaned git-cliff context:"
+          jq '.' "$PRUNE_CONTEXT"
       shell: bash
       env:
         TMPDIR: ${{ runner.temp }}
@@ -57,10 +59,9 @@ runs:
           python "$GITHUB_ACTION_PATH/summarize.py" < "$PRUNE_CONTEXT" > "$SUMMARIZED_COMMITS"
           NUMBER_OF_SUMMARIZED_COMMITS=$(jq -r 'length' "$SUMMARIZED_COMMITS")
           echo "commits=$SUMMARIZED_COMMITS" >> "$GITHUB_OUTPUT"
-          echo "Summarizing **$NUMBER_OF_COMMITS commits** into **$NUMBER_OF_SUMMARIZED_COMMITS**" >> "$GITHUB_STEP_SUMMARY"
-          echo "\`\`\`json" >> "$GITHUB_STEP_SUMMARY"
-          jq '.' "$SUMMARIZED_COMMITS" >> "$GITHUB_STEP_SUMMARY"
-          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Summarized **$NUMBER_OF_COMMITS commits** into **$NUMBER_OF_SUMMARIZED_COMMITS** commits" >> "$GITHUB_STEP_SUMMARY"
+          echo "Summarized output:"
+          jq '.' "$SUMMARIZED_COMMITS"
       shell: bash
       env:
         TMPDIR: ${{ runner.temp }}
@@ -85,10 +86,8 @@ runs:
         LATEST_TAG=$(jq -r '.version' "$PRUNE_CONTEXT")
         gh release create "$LATEST_TAG" --verify-tag --draft --fail-on-no-commits --notes-file "$CHANGELOG" "changelog.json#Changelog (JSON)"
         echo "Created a release (draft) for tag \`$LATEST_TAG\`" >> "$GITHUB_STEP_SUMMARY"
-        echo "Generated changelog was:" >> "$GITHUB_STEP_SUMMARY"
-        echo "\`\`\`json" >> "$GITHUB_STEP_SUMMARY"
-        jq '.' changelog.json >> "$GITHUB_STEP_SUMMARY"
-        echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "Generated changelog was:"
+        jq '.' changelog.json
       shell: bash
       env:
         TMPDIR: ${{ runner.temp }}
