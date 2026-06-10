@@ -1,0 +1,22 @@
+name: Generate changelog
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+jobs:
+  changelog:
+    name: Generate changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Generate changelog
+        uses: ./.github/actions/sphere-changelog
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
