@@ -69,13 +69,14 @@ runs:
         GEMINI_MODEL_ID: ${{ inputs.gemini_model_id }}
     - name: Create Github Release
       run: |
+        LATEST_TAG=$(jq -r '.version' "$PRUNE_CONTEXT")
         case $SUMMARIZE_STATUS in
             success)
                 jq --argjson sections "$(jq -c '.' "$SUMMARIZE_COMMITS")" '.commits |= $sections' "$PRUNE_CONTEXT" | \
-                  jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" > changelog.json
+                  jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" > "changelog-$LATEST_TAG.json"
                 ;;
             skipped)
-                jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" "$PRUNE_CONTEXT" > changelog.json
+                jq --from-file "$GITHUB_ACTION_PATH/10-mapping.jq" "$PRUNE_CONTEXT" > "changelog-$LATEST_TAG.json"
                 ;;
             *)
                 echo "::debug::Summarize status $SUMMARIZE_STATUS not handled"
@@ -83,11 +84,10 @@ runs:
         esac
         CHANGELOG=$(mktemp)
         GIT_CLIFF_OUTPUT="$CHANGELOG" git cliff --latest
-        LATEST_TAG=$(jq -r '.version' "$PRUNE_CONTEXT")
-        gh release create "$LATEST_TAG" --verify-tag --draft --fail-on-no-commits --notes-file "$CHANGELOG" "changelog.json#Changelog (JSON)"
+        gh release create "$LATEST_TAG" --verify-tag --draft --fail-on-no-commits --notes-file "$CHANGELOG" "changelog-$LATEST_TAG.json"
         echo "Created a release (draft) for tag \`$LATEST_TAG\`" >> "$GITHUB_STEP_SUMMARY"
         echo "Generated changelog was:"
-        jq '.' changelog.json
+        jq '.' "changelog-$LATEST_TAG.json"
       shell: bash
       env:
         TMPDIR: ${{ runner.temp }}
